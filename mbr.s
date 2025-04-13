@@ -22,9 +22,28 @@ _start:
   ljmp $0, $skip
 skip:
 
-  call clrscr
+  call clrscr /* Make things look nice */
 
+read_kernel:
+  /* Read kernel from disk into memory
 
+   * Sectors on disk are read into memory at es:bx, so set %bx to right after 
+   * MBR in memory.
+   * */
+  mov $0x7e00, %bx
+
+  mov $0x02, %ah /* INT Service Code */
+  mov $0x01, %al /* Num sectors to read (sector is 512 bytes)*/
+
+  mov $0x00, %ch /* Cylinder Number (disk identification)*/
+  mov $0x02, %cl /* Sector Number (sector on disk) */
+
+  mov $0x00, %dh /* Drive Head */
+  /* %dl need not be set as it is the same drive */
+
+  INT $0x13
+
+load_gdt:
   /* Load GDT */
   lgdt gdt_descriptor
 
