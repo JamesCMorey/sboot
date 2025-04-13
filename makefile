@@ -1,19 +1,26 @@
 DISK = disk.img
 
 MBR_SRC = mbr.s
-OS_SRC = os.c
+KERNEL_SRC = kernel.c
 BIN = bin
 
-LD_OPTS = -m elf_i386 -Ttext=0x7C00 --oformat=binary
+LD_OPTS = -m elf_i386 --oformat=binary
+LD_MBR = -Ttext=0x7C00 $(LD_OPTS)
+LD_KERNEL = -Ttext=0x1000 $(LD_OPTS)
+
 QEMU = qemu-system-i386 -nographic -drive format=raw,file=$(DISK)
 
-all: $(DISK) clean
+all: clean $(DISK)
 
 $(DISK):
-	gcc -m32 -ffreestanding -fno-pic -nostdlib -fno-stack-protector -c os.c -o os.o
+	gcc -m32 -ffreestanding -fno-pic -nostdlib -fno-stack-protector -c kernel.c -o kernel.o
 	as --32 mbr.s -o mbr.o
-	ld $(LD_OPTS) mbr.o os.o -o $(DISK)
-	#dd if=$(BIN) of=$(DISK) conv=notrunc
+	# Link MBR and Kernel
+	ld $(LD_MBR) mbr.o -o mbr.bin
+	ld $(LD_KERNEL) kernel.o -o kernel.bin
+	# Combine MBR and Kernel
+	dd if=mbr.bin of=$(DISK) conv=notrunc
+	dd if=kernel.bin of=$(DISK) conv=notrunc seek=1
 
 run:clean all # ctrl-a x to exit
 	$(QEMU) -s

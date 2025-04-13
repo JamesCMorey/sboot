@@ -8,6 +8,12 @@
 _start:
   cli /* clear interrupt flag */
 
+
+  /* Enable A20 line */
+  inb $0x92, %al
+  orb $0x02, %al
+  outb %al, $0x92
+
   xor %ax, %ax
 
   /* Zero segment indicators */
@@ -22,7 +28,7 @@ _start:
   ljmp $0, $skip
 skip:
 
-  call clrscr /* Make things look nice */
+  # call clrscr /* Make things look nice */
 
 read_kernel:
   /* Read kernel from disk into memory
@@ -30,7 +36,7 @@ read_kernel:
    * Sectors on disk are read into memory at es:bx, so set %bx to right after 
    * MBR in memory.
    * */
-  mov $0x7e00, %bx
+  mov $0x1000, %bx
 
   mov $0x02, %ah /* INT Service Code */
   mov $0x01, %al /* Num sectors to read (sector is 512 bytes)*/
@@ -68,9 +74,13 @@ protected_mode_entry:
   movw %ax, %ss
   movw %ax, %fs
   movw %ax, %gs
+  movl $0x9000, %esp
 
-hang:
-  jmp hang
+  ljmp $0x08, $0x1000
+
+
+#hang:
+  #jmp hang
 
 clrscr:
     mov     $0x00, %ah
