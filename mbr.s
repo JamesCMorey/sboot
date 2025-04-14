@@ -28,7 +28,10 @@ _start:
   ljmp $0, $skip
 skip:
 
-  # call clrscr /* Make things look nice */
+    /* Set up VDA for text output */
+    mov $0x03, %al       # 80x25 color text mode
+    mov $0x00, %ah
+    int $0x10
 
 read_kernel:
   /* Read kernel from disk into memory
@@ -39,9 +42,9 @@ read_kernel:
   mov $0x1000, %bx
 
   mov $0x02, %ah /* INT Service Code */
-  mov $0x01, %al /* Num sectors to read (sector is 512 bytes)*/
+  mov $0x01, %al /* Num sectors to read (sector is 512 bytes) */
 
-  mov $0x00, %ch /* Cylinder Number (disk identification)*/
+  mov $0x00, %ch /* Cylinder Number (disk identification) */
   mov $0x02, %cl /* Sector Number (sector on disk) */
 
   mov $0x00, %dh /* Drive Head */
@@ -53,7 +56,7 @@ load_gdt:
   /* Load GDT */
   lgdt gdt_descriptor
 
-  /* Enter Protected Mode (x32)*/
+  /* Enter Protected Mode (x32) */
   /* %eax isn't valid in 16-bit, but it's necessary to keep the assembler happy. */
   /* This also means the 'l' variants of the ops are needed. */
   movl %cr0, %eax 
@@ -66,8 +69,7 @@ load_gdt:
 
 .code32
 protected_mode_entry:
-  /* Set segments to 0x10 (index of Data Segment descriptor in GDT)
-   */
+  /* Set segments to 0x10 (index of Data Segment descriptor in GDT) */
   movw $0x10, %ax
   movw %ax, %ds
   movw %ax, %es
@@ -77,16 +79,6 @@ protected_mode_entry:
   movl $0x9000, %esp
 
   ljmp $0x08, $0x1000
-
-
-#hang:
-  #jmp hang
-
-clrscr:
-    mov     $0x00, %ah
-    mov     $0x07, %al
-    int     $0x10
-    ret
 
 .align 8
 gdt:
